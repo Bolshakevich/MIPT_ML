@@ -1,3 +1,5 @@
 .*
 !.gitignore
 DeepLearning/Seminars/01. Image Convolution/mnist/*
+DeepLearning/Seminars/02.Cnn/cifar/*
+DeepLearning/Seminars/02.Cnn/__pycache__/*
