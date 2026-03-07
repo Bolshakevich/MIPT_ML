@@ -4,3 +4,6 @@ DeepLearning/Seminars/01. Image Convolution/mnist/*
 DeepLearning/Seminars/02.Cnn/cifar/*
 DeepLearning/Seminars/02.Cnn/__pycache__/*
 DeepLearning/Seminars/02.Cnn/02_Image_Classification_solved.ipynb
+DeepLearning/Seminars/03. Image Segm/data/*
+DeepLearning/Seminars/03. Image Segm/voc/*
+
