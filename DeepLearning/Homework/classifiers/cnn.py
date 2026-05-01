@@ -58,9 +58,14 @@ class ThreeLayerConvNet(object):
         # **ширина и высота входных данных сохранялись**. Взгляните на 
         # начало функции loss() #
         ############################################################################
-        F, (C, H, W) = num_filters, input_dim # dim size
-        self.params.update({ #...
-                            })
+        C, H, W = input_dim
+        self.params["W1"] = weight_scale * np.random.randn(num_filters, C, filter_size, filter_size)
+        self.params["b1"] = np.zeros(num_filters)
+        dim2 = num_filters * (H // 2) * (W // 2)
+        self.params["W2"] = weight_scale * np.random.randn(dim2, hidden_dim)
+        self.params["b2"] = np.zeros(hidden_dim)
+        self.params["W3"] = weight_scale * np.random.randn(hidden_dim, num_classes)
+        self.params["b3"] = np.zeros(num_classes)
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -86,16 +91,11 @@ class ThreeLayerConvNet(object):
         #  pool_param проводим в слой max-pooling
         pool_param = {"pool_height": 2, "pool_width": 2, "stride": 2}
 
-        scores = None
-        ############################################################################
-        # TODO: Реализовать прямой проход для трехслойной сверточной сети, #
-        # вычисляя оценки классов для X и сохраняя их в переменной scores #
-        #
-        # #
-        # вы можете использовать функции, определенные в classifiesr/layers.py и #
-        # classifiers/layer_utils.py. #
-        ############################################################################
-        # 
+        out1, cache1 = conv_relu_pool_forward(X, W1, b1, conv_param, pool_param)
+        N = X.shape[0]
+        out1_flat = out1.reshape(N, -1)
+        out2, cache2 = affine_relu_forward(out1_flat, W2, b2)
+        scores, cache3 = affine_forward(out2, W3, b3)
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -103,19 +103,20 @@ class ThreeLayerConvNet(object):
         if y is None:
             return scores
 
-        loss, grads = 0, {}
-        ############################################################################
-        # TODO: обратный проход для трехслойной сверточной сети, #
-        # сохраняя функцию потерь и градиенты в переменных loss и grads. Вычислить #
-        # функцию потерь данных с помощью softmax и убедиться, что grads[k] содержит градиенты #
-        # для self.params[k]. Не забудьте добавить L2-регуляризацию! #
-        # #
-        # ПРИМЕЧАНИЕ:  L2-регуляризация включает множитель #
-        # равный 0,5 для упрощения выражения для градиента. #
-        ############################################################################
-        # loss, dout = softmax_loss(scores, y)                                     # loss and dout
-        # loss += 0.5 * self.reg * (np.sum(W1**2) + np.sum(W2**2) + np.sum(W3**2)) # regularized loss
-        # ...
+        loss, dscores = softmax_loss(scores, y)
+        loss += 0.5 * self.reg * (np.sum(W1**2) + np.sum(W2**2) + np.sum(W3**2))
+        dout3, dW3, db3 = affine_backward(dscores, cache3)
+        dout2, dW2, db2 = affine_relu_backward(dout3, cache2)
+        dout1 = dout2.reshape(out1.shape)
+        dX, dW1, db1 = conv_relu_pool_backward(dout1, cache1)
+        grads = {
+            "W1": dW1 + self.reg * W1,
+            "b1": db1,
+            "W2": dW2 + self.reg * W2,
+            "b2": db2,
+            "W3": dW3 + self.reg * W3,
+            "b3": db3,
+        }
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
